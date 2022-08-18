@@ -307,7 +307,7 @@ class MaskableDQN(OffPolicyAlgorithm):
             else:
                 action = np.array(self.action_space.sample())
         else:
-            action, state = self.policy.predict(observation, state, episode_start, deterministic, deterministic, action_masks=action_masks)
+            action, state = self.policy.predict(observation, state, episode_start, deterministic, action_masks=action_masks)
         return action, state
 
     def _init_callback(
