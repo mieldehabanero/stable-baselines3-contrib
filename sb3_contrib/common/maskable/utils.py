@@ -1,4 +1,5 @@
 import numpy as np
+from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.vec_env import VecEnv
 
@@ -36,3 +37,21 @@ def is_masking_supported(env: GymEnv) -> bool:
             return False
     else:
         return hasattr(env, EXPECTED_METHOD_NAME)
+
+
+def model_supports_masking(model: BaseAlgorithm) -> bool:
+    """
+    Checks whether gym env exposes a method returning invalid action masks
+
+    :param env: the Gym environment to check
+    :return: True if the method is found, False otherwise
+    """
+
+    try:
+        class_name = model.__class__.__name__
+        if class_name.__contains__('Maskable'):
+            return True
+        else:
+            return False
+    except AttributeError:
+        return False
