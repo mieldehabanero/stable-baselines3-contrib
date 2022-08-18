@@ -434,7 +434,7 @@ class MaskableQNetwork(QNetwork):
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
         layer_mod: Optional[nn.Module] = nn.Linear,
-        layer_kwargs: Optional[Dict[str, Any]] = None,
+        layer_kwargs: Optional[Dict[str, Any]] = {},
     ):
         super().__init__(
             observation_space,
@@ -518,7 +518,7 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
         normalize_images: bool = True,
         support: Optional[th.Tensor] = None,
         layer_mod: Optional[nn.Module] = nn.Linear,
-        layer_kwargs: Optional[Dict[str, Any]] = None,
+        layer_kwargs: Optional[Dict[str, Any]] = {},
     ):
         super().__init__(
             observation_space,
