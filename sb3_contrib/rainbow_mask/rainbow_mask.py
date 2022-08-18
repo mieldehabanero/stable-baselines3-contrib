@@ -13,7 +13,6 @@ from sb3_contrib.common.maskable.buffers import MaskableReplayBuffer, MaskableDi
 from sb3_contrib.common.maskable.utils import (get_action_masks,
                                                is_masking_supported)
 from sb3_contrib.dqn_mask.policies import CnnPolicy, MaskableDQNPolicy, MlpPolicy, MultiInputPolicy
-from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback
 from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
@@ -385,8 +384,8 @@ class MaskableRainbow(OffPolicyAlgorithm):
         replay_buffer = self.replay_buffer
 
         assert use_masking and isinstance(
-            replay_buffer, (MaskableNStepReplayBuffer, MaskablePrioritizedReplayBuffer)
-        ), "replay_buffer must support action masking"
+            replay_buffer, (MaskableReplayBuffer, MaskableDictReplayBuffer)
+        ), "replay buffer must support action masking"
 
         truncate_last_traj = (
             self.optimize_memory_usage
@@ -512,7 +511,7 @@ class MaskableRainbow(OffPolicyAlgorithm):
 
     def _store_transition(
         self,
-        replay_buffer: ReplayBuffer,
+        replay_buffer: MaskableReplayBuffer,
         buffer_action: np.ndarray,
         new_obs: Union[np.ndarray, Dict[str, np.ndarray]],
         reward: np.ndarray,
@@ -585,7 +584,7 @@ class MaskableRainbow(OffPolicyAlgorithm):
         env: VecEnv,
         callback: BaseCallback,
         train_freq: TrainFreq,
-        replay_buffer: ReplayBuffer,
+        replay_buffer: MaskableReplayBuffer,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         log_interval: Optional[int] = None,
