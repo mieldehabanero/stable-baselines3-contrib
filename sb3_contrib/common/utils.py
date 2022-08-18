@@ -1,8 +1,14 @@
+import importlib
+import inspect
 from typing import Callable, Optional, Sequence
 
 import torch as th
 from torch import nn
 
+from numpy import array_equal, mean, std
+from stable_baselines3.common.logger import TensorBoardOutputFormat
+from torch._C import _log_api_usage_once
+from torch.utils.tensorboard.summary import hparams
 
 def quantile_huber_loss(
     current_quantiles: th.Tensor,
@@ -161,3 +167,98 @@ def flat_grad(
         allow_unused=True,
     )
     return th.cat([th.ravel(grad) for grad in grads if grad is not None])
+
+
+# TODO https://github.com/pytorch/pytorch/issues/63725
+def add_hparams(
+    tb_file_writer,
+    hparam_dict,
+    metric_dict,
+    hparam_domain_discrete=None,
+    run_name=None,
+):
+    _log_api_usage_once("tensorboard.logging.add_hparams")
+    if type(hparam_dict) is not dict or type(metric_dict) is not dict:
+        raise TypeError("hparam_dict and metric_dict should be dictionary.")
+    exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
+
+    tb_file_writer.add_summary(exp)
+    tb_file_writer.add_summary(ssi)
+    tb_file_writer.add_summary(sei)
+
+
+def get_object_members(env_module):
+    object = importlib.import_module(env_module)
+    members = inspect.getmembers(object, inspect.isclass)
+
+    filtered = [name for name, obj in members if env_module in obj.__module__]
+
+    return filtered
+
+
+def get_tb_formatter(output_formats):
+    # Gets reference to tensorboard formatter object
+    # note: the failure case (not formatter found) is not handled here, should be done with try/except.
+    tb_formatter = next(
+        formatter
+        for formatter in output_formats
+        if isinstance(formatter, TensorBoardOutputFormat)
+    )
+    return tb_formatter
+
+
+def log_buffer_mean(
+    logger,
+    buffer,
+    name_tb,
+    name_log: Optional[str] = "",
+    verbose: Optional[int] = 0,
+):
+    if len(buffer) > 0:
+        buffer_mean, buffer_std = mean(buffer), std(buffer)
+        if verbose > 0 and name_log != "":
+            print(f"{name_log}: {buffer_mean:.2f} +/- {buffer_std:.2f}")
+        logger.record(name_tb, buffer_mean)
+        return buffer_mean
+    return None
+
+
+def parse_net_arch(net_arch):
+    if isinstance(net_arch[0], dict):
+        net_arch = net_arch[0]
+    else:
+        net_arch = net_arch
+
+    if "vf" in net_arch:
+        net_arch_vf = net_arch["vf"]
+        if "pi" in net_arch:
+            net_arch_i = net_arch["pi"]
+
+        elif "qi" in net_arch:
+            net_arch_i = net_arch["qi"]
+
+        nn_layers_i = int(len(net_arch_i))
+        nn_units_i = int(net_arch_i[0])
+        nn_layers_vf = int(len(net_arch_vf))
+        nn_units_vf = int(net_arch_vf[0])
+
+        if array_equal(net_arch_i, net_arch_vf):
+            nn_layers = int(len(net_arch_i))
+            nn_units = int(net_arch_i[0])
+
+    else:
+        nn_layers = int(len(net_arch))
+        nn_units = int(net_arch[0])
+        nn_layers_i = int(len(net_arch))
+        nn_units_i = int(net_arch[0])
+        nn_layers_vf = int(len(net_arch))
+        nn_units_vf = int(net_arch[0])
+
+    return (
+        nn_layers,
+        nn_units,
+        nn_layers_i,
+        nn_units_i,
+        nn_layers_vf,
+        nn_units_vf,
+    )
