@@ -11,12 +11,12 @@ from stable_baselines3.common.torch_layers import (
     FlattenExtractor,
     MlpExtractor,
     NatureCNN,
-    create_mlp,
 )
 from stable_baselines3.common.type_aliases import Schedule
 from torch import nn
 
 from sb3_contrib.common.maskable.distributions import MaskableDistribution, make_masked_proba_distribution
+from sb3_contrib.common.policies import QNetwork
 
 
 class MaskableActorCriticPolicy(BasePolicy):
@@ -412,7 +412,7 @@ class MaskableMultiInputActorCriticPolicy(MaskableActorCriticPolicy):
         )
 
 
-class MaskableQNetwork(BasePolicy):
+class MaskableQNetwork(QNetwork):
     """
     Action-Value (Q-Value) network for DQN
 
@@ -433,37 +433,50 @@ class MaskableQNetwork(BasePolicy):
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
+        layer_mod: Optional[nn.Module] = nn.Linear,
+        layer_kwargs: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
+            features_dim=features_dim,
+            net_arch=net_arch,
+            activation_fn=activation_fn,
             normalize_images=normalize_images,
+            layer_mod=layer_mod,
+            layer_kwargs=layer_kwargs,
         )
 
-        if net_arch is None:
-            net_arch = [64, 64]
-
-        self.net_arch = net_arch
-        self.activation_fn = activation_fn
-        self.features_extractor = features_extractor
-        self.features_dim = features_dim
-        self.normalize_images = normalize_images
-        action_dim = self.action_space.n  # number of actions
-        q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
-        self.q_net = nn.Sequential(*q_net)
-
-    def forward(self, obs: th.Tensor) -> th.Tensor:
+    def forward(self, obs: th.Tensor, action_masks: Optional[np.ndarray] = None) -> th.Tensor:
         """
         Predict the q-values.
 
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        return self.q_net(self.extract_features(obs))
+        q_values = super(obs)
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        q_values = self(observation)
+        if isinstance(action_masks, np.ndarray):
+            m = 0.1
+            # create action masking tensor
+            action_is_valid = th.as_tensor(
+                action_masks, dtype=th.bool, device=self.device
+            ).reshape(q_values.shape)
+            # If we set invalid actions' q-values to a impossibly high value, they will never be selected by min()
+            q_values = q_values.where(
+                action_is_valid,
+                th.tensor(th.finfo(q_values.dtype).max, device=self.device),
+            )
+            # replace invalid actions' q-values with a value lower than any valid actions' q-value
+            min_valid_q_value, _ = q_values.min(dim=1)
+            (invalid_q_value,) = th.sub(min_valid_q_value, m)
+            q_values = q_values.where(action_is_valid, invalid_q_value)
+
+        return q_values
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = True, action_masks: Optional[np.ndarray] = None,) -> th.Tensor:
+        q_values = self(observation, action_masks=action_masks)
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
         return action
