@@ -222,11 +222,11 @@ class MaskableDictReplayBuffer(DictReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
     ):
-        if isinstance(self.action_space, spaces.Discrete):
-            mask_dims = self.action_space.n
+        if isinstance(action_space, spaces.Discrete):
+            mask_dims = action_space.n
         else:
             raise ValueError(
-                f"Unsupported action space {type(self.action_space)}"
+                f"Unsupported action space {type(action_space)}"
             )
 
         super().__init__(
