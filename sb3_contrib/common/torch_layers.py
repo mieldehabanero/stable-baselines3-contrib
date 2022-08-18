@@ -139,7 +139,7 @@ def create_mlp(
     activation_fn: Type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
     layer_mod: Type[nn.Module] = nn.Linear,
-    layer_kwargs: Optional[Dict[str, Any]] = None,
+    layer_kwargs: Optional[Dict[str, Any]] = {},
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
