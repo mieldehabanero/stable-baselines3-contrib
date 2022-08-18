@@ -847,10 +847,6 @@ class MaskableDQNCnnPolicy(MaskableDQNPolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        dueling_net: bool = True,
-        noisy_net: bool = True,
-        atom_size: int = 0,
-        support: Optional[th.Tensor] = None,
     ):
         super().__init__(
             observation_space,
@@ -863,10 +859,6 @@ class MaskableDQNCnnPolicy(MaskableDQNPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
-            dueling_net,
-            noisy_net,
-            atom_size,
-            support,
         )
 
 
@@ -900,10 +892,6 @@ class MaskableMultiInputDQNPolicy(MaskableDQNPolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        dueling_net: bool = True,
-        noisy_net: bool = True,
-        atom_size: int = 0,
-        support: Optional[th.Tensor] = None,
     ):
         super().__init__(
             observation_space,
@@ -916,8 +904,4 @@ class MaskableMultiInputDQNPolicy(MaskableDQNPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
-            dueling_net,
-            noisy_net,
-            atom_size,
-            support,
         )
