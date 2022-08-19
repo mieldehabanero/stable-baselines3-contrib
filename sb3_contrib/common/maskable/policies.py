@@ -448,7 +448,7 @@ class MaskableQNetwork(QNetwork):
             layer_kwargs=layer_kwargs,
         )
 
-    def forward(self, obs: th.Tensor, action_masks: Optional[np.ndarray] = None) -> th.Tensor:
+    def forward(self, obs: th.Tensor, action_masks: Optional[th.Tensor] = None) -> th.Tensor:
         """
         Predict the q-values.
 
@@ -457,28 +457,24 @@ class MaskableQNetwork(QNetwork):
         """
         q_values = super().forward(obs)
 
-        if isinstance(action_masks, np.ndarray):
-            # create action masking tensor
-            action_is_valid = th.as_tensor(
-                action_masks, dtype=th.bool, device=self.device
-            ).reshape(q_values.shape)
+        if isinstance(action_masks, th.Tensor):
             # If we set invalid actions' q-values to a impossibly high value, they will never be selected by min()
             q_values = q_values.where(
-                action_is_valid,
+                action_masks,
                 th.tensor(th.finfo(q_values.dtype).max, device=self.device),
             )
             # replace invalid actions' q-values with a value lower than any
             # valid actions' q-value
             m = 0.1
             min_valid_q_value, _ = q_values.min(dim=1)
-            n_envs = 1 if q_values.size(dim=0) == 1 else q_values.size(dim=0) - 1
-            n_actions = q_values.size(dim=1)
-            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_actions,n_envs).transpose(0,1)
-            q_values = q_values.where(action_is_valid, invalid_q_value)
+            n_repeats = q_values.size(dim=1)
+            n_repeats = q_values.size(dim=1)
+            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_repeats, 1).transpose(0,1)
+            q_values = q_values.where(action_masks, invalid_q_value)
 
         return q_values
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = True, action_masks: Optional[np.ndarray] = None,) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = True, action_masks: Optional[th.Tensor] = None,) -> th.Tensor:
         q_values = self(observation, action_masks=action_masks)
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
@@ -536,7 +532,7 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
             layer_kwargs=layer_kwargs,
         )
 
-    def forward(self, obs: th.Tensor, action_masks: Optional[np.ndarray] = None) -> th.Tensor:
+    def forward(self, obs: th.Tensor, action_masks: Optional[th.Tensor] = None) -> th.Tensor:
         """
         Predict the q-values.
 
@@ -545,28 +541,24 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
         """
         q_values = super().forward(obs)
 
-        if isinstance(action_masks, np.ndarray):
-            # create action masking tensor
-            action_is_valid = th.as_tensor(
-                action_masks, dtype=th.bool, device=self.device
-            ).reshape(q_values.shape)
+        if isinstance(action_masks, th.Tensor):
             # If we set invalid actions' q-values to a impossibly high value, they will never be selected by min()
             q_values = q_values.where(
-                action_is_valid,
+                action_masks,
                 th.tensor(th.finfo(q_values.dtype).max, device=self.device),
             )
             # replace invalid actions' q-values with a value lower than any
             # valid actions' q-value
             m = 0.1
             min_valid_q_value, _ = q_values.min(dim=1)
-            n_envs = 1 if q_values.size(dim=0) == 1 else q_values.size(dim=0) - 1
-            n_actions = q_values.size(dim=1)
-            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_actions,n_envs).transpose(0,1)
-            q_values = q_values.where(action_is_valid, invalid_q_value)
+            n_repeats = q_values.size(dim=1)
+            n_repeats = q_values.size(dim=1)
+            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_repeats, 1).transpose(0,1)
+            q_values = q_values.where(action_masks, invalid_q_value)
 
         return q_values
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = True, action_masks: Optional[np.ndarray] = None,) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = True, action_masks: Optional[th.Tensor] = None,) -> th.Tensor:
         q_values = self(observation, action_masks=action_masks)
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
@@ -663,7 +655,7 @@ class MaskableDQNPolicy(BasePolicy):
         self, 
         obs: th.Tensor, 
         deterministic: bool = True,
-        action_masks: Optional[np.ndarray] = None,
+        action_masks: Optional[th.Tensor] = None,
     ) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic, action_masks=action_masks)
 
@@ -671,7 +663,7 @@ class MaskableDQNPolicy(BasePolicy):
         self, 
         obs: th.Tensor, 
         deterministic: bool = True,
-        action_masks: Optional[np.ndarray] = None,
+        action_masks: Optional[th.Tensor] = None,
     ) -> th.Tensor:
         return self.q_net._predict(obs, deterministic=deterministic, action_masks=action_masks)
 
@@ -681,7 +673,7 @@ class MaskableDQNPolicy(BasePolicy):
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-        action_masks: Optional[np.ndarray] = None,
+        action_masks: Optional[th.Tensor] = None,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Get the policy action from an observation (and optional hidden state).
