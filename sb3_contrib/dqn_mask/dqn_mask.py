@@ -236,7 +236,7 @@ class MaskableDQN(OffPolicyAlgorithm):
         learning_starts: int,
         action_noise: Optional[ActionNoise] = None,
         n_envs: int = 1,
-        action_masks: Optional[np.ndarray] = None,
+        action_masks: Optional[th.Tensor] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Sample an action according to the exploration policy.
@@ -286,7 +286,7 @@ class MaskableDQN(OffPolicyAlgorithm):
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-        action_masks: Optional[np.ndarray] = None,
+        action_masks: Optional[th.Tensor] = None,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Overrides the base_class predict function to include epsilon-greedy exploration.
