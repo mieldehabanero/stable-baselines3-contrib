@@ -455,7 +455,7 @@ class MaskableQNetwork(QNetwork):
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        q_values = super(obs)
+        q_values = super().forward(obs)
 
         if isinstance(action_masks, np.ndarray):
             m = 0.1
@@ -540,7 +540,7 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        q_values = super(obs)
+        q_values = super().forward(obs)
 
         if isinstance(action_masks, np.ndarray):
             m = 0.1
