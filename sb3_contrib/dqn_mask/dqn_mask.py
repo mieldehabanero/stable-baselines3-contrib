@@ -236,7 +236,7 @@ class MaskableDQN(OffPolicyAlgorithm):
         learning_starts: int,
         action_noise: Optional[ActionNoise] = None,
         n_envs: int = 1,
-        action_masks: Optional[th.Tensor] = None,
+        action_masks: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Sample an action according to the exploration policy.
@@ -286,7 +286,7 @@ class MaskableDQN(OffPolicyAlgorithm):
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-        action_masks: Optional[th.Tensor] = None,
+        action_masks: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Overrides the base_class predict function to include epsilon-greedy exploration.
@@ -509,8 +509,8 @@ class MaskableDQN(OffPolicyAlgorithm):
         reward: np.ndarray,
         dones: np.ndarray,
         infos: List[Dict[str, Any]],
-        action_masks: Optional[th.Tensor] = None,
-        next_action_masks: Optional[th.Tensor] = None,
+        action_masks: Optional[np.ndarray] = None,
+        next_action_masks: Optional[np.ndarray] = None,
     ) -> None:
         """
         Store transition in the replay buffer.

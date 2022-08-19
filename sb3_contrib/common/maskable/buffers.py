@@ -65,8 +65,8 @@ class MaskableReplayBuffer(ReplayBuffer):
         reward: np.ndarray,
         done: np.ndarray,
         infos: List[Dict[str, Any]],
-        action_masks: Optional[th.Tensor] = None,
-        next_action_masks: Optional[th.Tensor] = None,
+        action_masks: Optional[np.ndarray] = None,
+        next_action_masks: Optional[np.ndarray] = None,
     ) -> None:
 
         idx = self.pos
@@ -249,8 +249,8 @@ class MaskableDictReplayBuffer(DictReplayBuffer):
         reward: np.ndarray,
         done: np.ndarray,
         infos: List[Dict[str, Any]],
-        action_masks: Optional[th.Tensor] = None,
-        next_action_masks: Optional[th.Tensor] = None,
+        action_masks: Optional[np.ndarray] = None,
+        next_action_masks: Optional[np.ndarray] = None,
     ) -> None:
 
         idx = self.pos
