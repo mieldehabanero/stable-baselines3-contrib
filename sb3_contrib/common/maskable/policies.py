@@ -458,7 +458,6 @@ class MaskableQNetwork(QNetwork):
         q_values = super().forward(obs)
 
         if isinstance(action_masks, np.ndarray):
-            m = 0.1
             # create action masking tensor
             action_is_valid = th.as_tensor(
                 action_masks, dtype=th.bool, device=self.device
@@ -468,9 +467,13 @@ class MaskableQNetwork(QNetwork):
                 action_is_valid,
                 th.tensor(th.finfo(q_values.dtype).max, device=self.device),
             )
-            # replace invalid actions' q-values with a value lower than any valid actions' q-value
+            # replace invalid actions' q-values with a value lower than any
+            # valid actions' q-value
+            m = 0.1
             min_valid_q_value, _ = q_values.min(dim=1)
-            (invalid_q_value,) = th.sub(min_valid_q_value, m)
+            n_envs = 1 if q_values.size(dim=0) == 1 else q_values.size(dim=0) - 1
+            n_actions = q_values.size(dim=1)
+            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_actions,n_envs).transpose(0,1)
             q_values = q_values.where(action_is_valid, invalid_q_value)
 
         return q_values
@@ -518,7 +521,7 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
         normalize_images: bool = True,
         support: Optional[th.Tensor] = None,
         layer_mod: Optional[nn.Module] = nn.Linear,
-        layer_kwargs: Optional[Dict[str, Any]] = {},
+        layer_kwargs: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             observation_space,
@@ -543,7 +546,6 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
         q_values = super().forward(obs)
 
         if isinstance(action_masks, np.ndarray):
-            m = 0.1
             # create action masking tensor
             action_is_valid = th.as_tensor(
                 action_masks, dtype=th.bool, device=self.device
@@ -553,9 +555,13 @@ class MaskableDuelingQNetwork(DuelingQNetwork):
                 action_is_valid,
                 th.tensor(th.finfo(q_values.dtype).max, device=self.device),
             )
-            # replace invalid actions' q-values with a value lower than any valid actions' q-value
+            # replace invalid actions' q-values with a value lower than any
+            # valid actions' q-value
+            m = 0.1
             min_valid_q_value, _ = q_values.min(dim=1)
-            (invalid_q_value,) = th.sub(min_valid_q_value, m)
+            n_envs = 1 if q_values.size(dim=0) == 1 else q_values.size(dim=0) - 1
+            n_actions = q_values.size(dim=1)
+            invalid_q_value = th.sub(min_valid_q_value, m).repeat(n_actions,n_envs).transpose(0,1)
             q_values = q_values.where(action_is_valid, invalid_q_value)
 
         return q_values
@@ -600,7 +606,7 @@ class MaskableDQNPolicy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super().__init__(
+        super(BasePolicy, self).__init__(
             observation_space,
             action_space,
             features_extractor_class,
