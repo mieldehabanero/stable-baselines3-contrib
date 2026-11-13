@@ -23,7 +23,7 @@ class MaskableDictRolloutBufferSamples(NamedTuple):
     returns: th.Tensor
     action_masks: th.Tensor
 
-class MaskableReplayBufferSamples(ReplayBufferSamples):
+class MaskableReplayBufferSamples(NamedTuple):
     observations: th.Tensor
     actions: th.Tensor
     next_observations: th.Tensor
