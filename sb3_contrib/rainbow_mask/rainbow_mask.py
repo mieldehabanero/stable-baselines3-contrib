@@ -92,6 +92,7 @@ class MaskableRainbow(OffPolicyAlgorithm):
         exploration_fraction: float = 0.1,
         exploration_initial_eps: float = 1.0,
         exploration_final_eps: float = 0.05,
+        double_dqn: bool = True,
         max_grad_norm: float = 10,
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
@@ -132,6 +133,7 @@ class MaskableRainbow(OffPolicyAlgorithm):
         self.exploration_final_eps = exploration_final_eps
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
+        self.double_dqn = double_dqn
         # For updating the target network with multiple envs:
         self._n_calls = 0
         self.max_grad_norm = max_grad_norm
@@ -201,9 +203,15 @@ class MaskableRainbow(OffPolicyAlgorithm):
 
             with th.no_grad():
                 # Compute the next Q-values using the target network
-                next_q_values = self.q_net_target(replay_data.next_observations, action_masks=replay_data.next_action_masks)
-                # Follow greedy policy: use the one with the highest value
-                next_q_values, _ = next_q_values.max(dim=1)
+                next_q_values = self.q_net_target(replay_data.next_observations, action_masks=replay_data.next_action_masks,)
+                if self.double_dqn:
+                    # use current model to select the action with maximal q value
+                    max_actions = th.argmax(self.q_net(replay_data.next_observations, action_masks=replay_data.next_action_masks,), dim=1)
+                    # evaluate q value of that action using fixed target network
+                    next_q_values = th.gather(next_q_values, dim=1, index=max_actions.unsqueeze(-1))
+                else:
+                    # Follow greedy policy: use the one with the highest value
+                    next_q_values, _ = next_q_values.max(dim=1)
                 # Avoid potential broadcast issue
                 next_q_values = next_q_values.reshape(-1, 1)
                 # 1-step TD target
@@ -447,7 +455,7 @@ class MaskableRainbow(OffPolicyAlgorithm):
         eval_env: Optional[GymEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
-        tb_log_name: str = "MaskableRainbow",
+        tb_log_name: str = "MaskableDQN",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         use_masking: bool = True,
