@@ -71,7 +71,7 @@ class MaskableReplayBuffer(ReplayBuffer):
     ) -> None:
 
         idx = self.pos
-        super()._add(obs, next_obs, action, reward, done, infos)
+        super().add(obs, next_obs, action, reward, done, infos)
 
         self.action_masks[
                 idx
@@ -269,7 +269,7 @@ class MaskableDictReplayBuffer(DictReplayBuffer):
     ) -> None:
 
         idx = self.pos
-        super()._add(obs, next_obs, action, reward, done, infos)
+        super().add(obs, next_obs, action, reward, done, infos)
 
         self.action_masks[
                 idx
